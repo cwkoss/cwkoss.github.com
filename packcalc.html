@@ -1,15 +1,304 @@
 <html>
 <head>
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3/jquery.min.js"></script>
-<script>
-$(document).ready(function(){
-    $("body").append("<p>Heyyyy</p>");
+<style>
+body {
+	width: 80%;
+	margin-right: auto;
+	margin-left: auto;
+	font-family: helvetica, sans-serif;
+	font-size: large;
+
+}
+div {
+	color: black;
+	background-color: white;
 }
 
-alert(1);
+#solutions {
+	background-color: white;
+}
+
+#header{
+	margin: 2px;
+	padding: 15px;
+	font-size:40px;
+}
+
+td {
+	text-align: center;
+	background-color: white;
+	color: black;
+	font-size: large;
+	border: 1px solid black;
+}
+
+.sizetbl td{
+	width:4%;
+}
+
+.packtbl td {
+	width: 2%;
+	margin-top: 10px;
+}
+
+
+.sizein
+{
+	color: black;
+	background-color: white;
+	text-align: center;
+	width: 66%;
+	font-size: large;
+}
+
+.secthead {
+	background-color: white;
+	margin: 2px;
+	padding: 15px;
+	color: black;
+	font-size:20px;
+}
+.results {
+	padding: 15px;
+	margin: 2px;
+}
+
+.manual {
+	display: none;
+}
+#click
+{
+	margin: 15px;
+	color: black;
+	background-color: white;
+	border: 2px solid black;
+	border-radius: 5px;
+	font-size: 20px;
+	width: 40%;
+	height: 50px;
+	margin-left: 30%;
+	margin-right: 20%;
+
+}
+
+</style>
+<script>
+sizes = [8, 8.5, 9, 9.5, 10, 10.5, 11, 11.5, 12, 13,15];
+packs = {
+	"v": [1,1,2,2,2,1,2,0,1,0,0],
+	"w": [1,1,2,1,2,1,2,0,1,1,0],
+	"u": [1,1,1,2,1,1,1,1,1,1,1],
+	"y": [1,1,2,1,2,1,2,0,1,1,0],
+	"x": [0,0,1,1,1,2,1,0,0,0,0]
+};
+order = [2,2,4,4,4,2,4,0,2,0,0];
+availablepacks = {'v':99,'w':99,'u':99,'y':99,'x':99};
+osDef = 99;
+options = {"":0};
+
+
+
+$(document).ready(function(){
+	$('body').append("<div id='header'>PackCalc</div>");
+	toappend = "<table class='sizetbl'><tr><td>Size</td>"
+	for(var key in sizes) {
+		toappend += "<td>" + sizes[key] + "</td>";
+	}
+	toappend += "</tr><tr><td>Sizes Ordered</td>";
+	for(var i in sizes) {
+  		toappend += "<td><input class='sizein' type='text' id='i" + i + "' value='" + order[i] + "'/></td>";
+  	}
+  	toappend += "</tr><tr class='manual'><td>Available OpenStock</td>";
+  	for(var key in sizes) {
+  		toappend += "<td><input class='sizein' type='text' id='os" + i + "' value='" + osDef + "'/></td>";
+  	}
+  	toappend += "</tr></table>";
+ 	toappend += "<input id='click' type='button' value='Calc' /><br/>";
+	toappend += "<div class='secthead'>Results<div id='shoetot' style='float:right;'></div></div>";
+
+  	packrowhead = "<tr><td>Pack</td><td>V</td><td>W</td><td>U</td><td>Y</td><td>X</td></tr>"
+
+  	toappend += "</div><table class='packtbl'>" + packrowhead + "<tr><td>Maximum Possible</td>";
+	for (var key in packs) {
+  		toappend += "<td><div id='max" + key + "'></div></td>";
+  	}
+  	toappend += "</tr></table>";
+
+	toappend += "<div class='results'>Best Solutions<div style='float:right;' id='opencount'></div></div>";
+
+
+	toappend += "<div id='solutions'></div>";
+
+
+
+		
+
+
+	$('body').append(toappend);
+
+	$('#click').click(function() {
+		var total = 0
+		for(var i = 0; i < sizes.length; i++) {
+			inputnm = "#i" + i;
+  			total += parseInt($(inputnm).val());
+  			order[i] = parseInt($(inputnm).val());
+  		}
+  		$('#shoetot').html("Total shoes: " + total);
+  		for(var key in packs) {
+  			$('#max'+ key).html(packFits(key));
+  		}
+
+
+		var best = minOpenStock();
+		console.log(best);
+
+		soltbl = ""
+		for (var key in best){
+			$("#opencount").html(best[key] + " Open Stock Pairs Needed");
+			soltbl += "<table class='packtbl'><tr><td>Packs</td>";
+			var dict = packStrToDict(key);
+			for(var c in packs) {
+				if(dict[c] == 0){
+					soltbl += "<td></td>";
+				} else {
+					soltbl += "<td>" + dict[c] + " " + c.toUpperCase() + "</td>";
+				}
+			}
+			soltbl += "</tr></table>";
+			soltbl += "<table class='sizetbl'><tr><td>Size</td>";
+			var sizecount = "<tr><td>OpenStock Pairs Needed</td>";
+			var remOpen = remOpenStockPairs(key);
+			for(var i in sizes) {
+				soltbl += "<td>" + sizes[i] + "</td>";
+				sizecount += "<td>" + remOpen[i] + "</td>";
+
+			}
+			soltbl += "</tr>" + sizecount + "</tr></table>";
+
+			console.log(packStrToDict(key));
+		}
+
+		$("#solutions").html(soltbl);
+
+  		minOpenStock();
+	});
+
+});
+
+function packFits(let, maxcount) {
+	maxcount = maxcount || 1;
+	var fits = true;
+	for (var i in order) {
+		fits = order[i] >= packs[let][i]*maxcount;
+		if(!fits) {
+			break;
+		}
+	}
+	if(fits) {
+		maxcount += 1;
+		return packFits(let, maxcount);
+	}
+	else {
+		return (maxcount - 1);
+	}
+}
+
+function minOpenStock(){
+	options = {};
+	var avl = [];
+	for(var key in availablepacks){
+		avl.push(key);
+		
+	}
+	addOptionTestChildren("", avl);
+	best = remOpenStock("");
+	bestkeys = {};
+	for(var key in options){
+		if(options[key] < best) {
+			bestkeys = {};
+			best = options[key]
+			bestkeys[key] = best;
+		} else if(options[key] == best) {
+			bestkeys[key] = best;
+		}
+	}
+	return bestkeys;
+}
+
+function addOptionTestChildren(str, avl){
+	options[str] = remOpenStock(str);
+	for(var key in avl) {
+		teststr = str + avl[key];
+		if(testOption(teststr)){
+			addOptionTestChildren(teststr, avl.slice(key, avl.length));
+		}
+
+	}
+}
+
+function remOpenStock(str){
+	var sum = [0,0,0,0,0,0,0,0,0,0,0];
+	for(var i in str) {
+		sum = addPack(str[i], sum);
+	}
+	var total = 0;
+	for(var key in sum) {
+		total += order[key] - sum[key]
+	}
+	return total;
+}
+
+function remOpenStockPairs(str){
+	var sum = [0,0,0,0,0,0,0,0,0,0,0];
+	for(var i in str) {
+		sum = addPack(str[i], sum);
+	}
+	for(var key in sum) {
+		sum[key] = order[key] - sum[key];
+	}
+	return sum;
+}
+
+function testOption(str){
+	var sum = [0,0,0,0,0,0,0,0,0,0,0];
+	for(var i in str) {
+		sum = addPack(str[i], sum);
+	}
+	return fitsOrder(sum);
+}
+
+function addPack(let, sum){
+	for(var i in sum){
+		sum[i] += packs[let][i];
+	}
+	return sum;
+}
+
+function fitsOrder(sum) {
+	for (var key in sum) {
+		if(order[key] < sum[key]){
+			return false;
+		}
+	}
+	return true;
+}
+function packStrToDict(str){
+	dict = [];
+	for(var key in packs){
+		count = 0;
+		for(var i in str){
+			if(str[i] == key) {
+				count++;
+			}
+		}
+		dict[key] = count;
+	}
+	return dict;
+}
+
 </script>
 </head>
 <body>
-8: <input type="text" />
 </body>
 </html>
