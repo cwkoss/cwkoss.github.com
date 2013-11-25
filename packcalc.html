@@ -82,6 +82,11 @@ td {
 
 }
 
+#reset{
+	float:right;
+	font-size:20px;
+}
+
 </style>
 <script>
 sizes = [8, 8.5, 9, 9.5, 10, 10.5, 11, 11.5, 12, 13,15];
@@ -92,8 +97,7 @@ packs = {
 	"y": [1,1,2,1,2,1,2,0,1,1,0],
 	"x": [0,0,1,1,1,2,1,0,0,0,0]
 };
-//order = [2,2,4,4,4,2,4,0,2,0,0];
-order = [0,0,0,0,0,0,0,0,0,0,0];
+order = [2,2,4,4,4,2,4,0,2,0,0];
 availablepacks = {'v':99,'w':99,'u':99,'y':99,'x':99};
 osDef = 99;
 options = {"":0};
@@ -101,21 +105,29 @@ options = {"":0};
 
 
 $(document).ready(function(){
-	$('body').append("<div id='header'>PackCalc</div>");
+	$('body').append("<div id='header'>PackCalc<div id='reset'>Reset</div></div>");
 	toappend = "<table class='sizetbl'><tr><td>Size</td>"
 	for(var key in sizes) {
 		toappend += "<td>" + sizes[key] + "</td>";
 	}
 	toappend += "</tr><tr><td>Sizes Ordered</td>";
-	for(var i in sizes) {
-  		toappend += "<td><input class='sizein' type='text' id='i" + i + "' value='" + order[i] + "'/></td>";
+	for(var key in sizes) {
+  		toappend += "<td><input class='sizein' type='text' id='i" + key + "' value='" + order[key] + "'/></td>";
   	}
   	toappend += "</tr><tr class='manual'><td>Available OpenStock</td>";
   	for(var key in sizes) {
-  		toappend += "<td><input class='sizein' type='text' id='os" + i + "' value='" + osDef + "'/></td>";
+  		toappend += "<td><input class='sizein' type='text' id='os" + key + "' value='" + osDef + "'/></td>";
   	}
   	toappend += "</tr></table>";
+
+ 	toappend += "<table class='packtbl'><tr><td>Packs</td><td>V</td><td>W</td><td>U</td><td>Y</td><td>X</td></tr><tr><td>In Stock</td>";
+ 	for(var key in packs){
+ 		toappend += "<td><input type='checkbox' id='instock" + key + "' checked></td>";
+ 	}
+
+ 	toappend += "</table>";
  	toappend += "<input id='click' type='button' value='Calc' /><br/>";
+
 	toappend += "<div class='secthead'>Results<div id='shoetot' style='float:right;'></div></div>";
 
   	packrowhead = "<tr><td>Pack</td><td>V</td><td>W</td><td>U</td><td>Y</td><td>X</td></tr>"
@@ -152,7 +164,6 @@ $(document).ready(function(){
 
 
 		var best = minOpenStock();
-		console.log(best);
 
 		soltbl = ""
 		for (var key in best){
@@ -177,12 +188,19 @@ $(document).ready(function(){
 			}
 			soltbl += "</tr>" + sizecount + "</tr></table>";
 
-			console.log(packStrToDict(key));
 		}
 
 		$("#solutions").html(soltbl);
 
   		minOpenStock();
+	});
+
+	$('#reset').click(function() {
+		for(var i = 0; i < sizes.length; i++) {
+			inputnm = "#i" + i;
+  			$(inputnm).val(0);
+  		}
+
 	});
 
 });
@@ -218,7 +236,7 @@ function minOpenStock(){
 	for(var key in options){
 		if(options[key] < best) {
 			bestkeys = {};
-			best = options[key]
+			best = options[key];
 			bestkeys[key] = best;
 		} else if(options[key] == best) {
 			bestkeys[key] = best;
@@ -230,9 +248,11 @@ function minOpenStock(){
 function addOptionTestChildren(str, avl){
 	options[str] = remOpenStock(str);
 	for(var key in avl) {
-		teststr = str + avl[key];
-		if(testOption(teststr)){
-			addOptionTestChildren(teststr, avl.slice(key, avl.length));
+		if($("#instock" + avl[key]).attr('checked')){
+			teststr = str + avl[key];
+			if(testOption(teststr)){
+				addOptionTestChildren(teststr, avl.slice(key, avl.length));
+			}
 		}
 
 	}
