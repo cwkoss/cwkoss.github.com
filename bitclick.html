@@ -217,7 +217,11 @@ function World() {
 
 		this.updateDiff();
 
-		this.networkpercent = 100 * this.myhashrate / Math.max(1, this.globalhashrate);
+		if(this.myhashrate == 0) {
+			this.networkpercent = 0;
+		} else {
+			this.networkpercent = 100 * this.myhashrate / this.globalhashrate;
+		}
 
 		this.mybtc = Math.floor(this.blocks) * 50;
 
