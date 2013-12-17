@@ -187,10 +187,12 @@ function World() {
 	this.networkpercent = 0;
 
 	this.update = function() {
+
+	
 		this.lasttime = this.currtime;
 		this.currtime= new Date(upspeed + this.currtime.getTime());
 		this.updateMyHash();
-
+		upspeed = parseInt($('input[@name="rspeed"]:checked').val());
 
 		this.totalusers = 0;
 		this.totalbelievers = 0;
@@ -242,7 +244,7 @@ function World() {
 	this.updateDiff = function() {
 		if(this.blockdepth - this.lastdiffchange > 2016) {
 			this.lastdiffchange += 2016;
-			console.log([(this.currtime - this.lastdifftime) / 1000 / 60 / 60 / 24, (14 * 24 * 60 * 60 * 1000) / (this.currtime - this.lastdifftime)]);
+			console.log("diff update(days, diffmultiplier)", [(this.currtime - this.lastdifftime) / 1000 / 60 / 60 / 24, (14 * 24 * 60 * 60 * 1000) / (this.currtime - this.lastdifftime)]);
 			this.diff = Math.max(1, this.diff * (14 * 24 * 60 * 60 * 1000) / (this.currtime - this.lastdifftime));
 			this.lastdifftime = this.currtime;
 		}
@@ -387,6 +389,14 @@ window.requestAnimFrame = (function() {
 </div>
 
 <div id="rightcol">
+	<div id="speed">
+		Speed:
+		<input type="radio" id="speed1m" name="rspeed" value="60000" checked /> 1m
+		<input type="radio" id="speed10m" name="rspeed" value="600000" /> 10m
+		<input type="radio" id="speed1h" name="rspeed" value="3600000" /> 1h
+		<input type="radio" id="speed6h" name="rspeed" value="21600000" /> 6h
+		<input type="radio" id="speed24h" name="rspeed" value="86400000"/> 24h
+	</div>
 	<div id="news">
 		<div id="newstitle">
 			News
